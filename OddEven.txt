@@ -1,0 +1,73 @@
+#include<stdio.h>
+#include<cuda.h>
+#include<conio.h>
+__global__ void even(int *a,int *n)
+{
+	if(threadIdx.x*2+1<*n)
+	{
+		if(a[threadIdx.x*2]>a[threadIdx.x*2+1])
+		{
+			int tmp=a[threadIdx.x*2];
+			a[threadIdx.x*2]=a[threadIdx.x*2+1];
+			a[threadIdx.x*2+1]=tmp;
+		}
+	}
+	__syncthreads();
+}
+__global__ void odd(int *a,int *n)
+{
+	if(threadIdx.x*2+2<*n)
+	{
+		if(a[threadIdx.x*2+1]>a[threadIdx.x*2+2])
+		{
+			int tmp;
+			tmp=a[threadIdx.x*2+1];
+			a[threadIdx.x*2+1]=a[threadIdx.x*2+2];
+			a[threadIdx.x*2+2]=tmp;
+		}
+	}
+	__syncthreads();
+}
+int main()
+{
+	int *n;
+	int g;
+	n=(int *)malloc(sizeof(int));
+	printf("Enter the number of numbers:");
+	scanf("%d",&g);
+	n=&g;
+	int *a,*c;		
+	a=(int *)malloc(sizeof(int)*g);
+	c=(int *)malloc(sizeof(int)*g);
+	for(int i=0;i<g;i++)
+	{
+		int temp;
+		scanf("%d",&temp);
+		a[i]=temp;
+	}
+	int *devA,*n1;
+	cudaMalloc((void **)&devA,sizeof(int)*g);
+	cudaMalloc((void **)&n1,sizeof(int));
+	cudaMemcpy(devA,a,sizeof(int)*g,cudaMemcpyHostToDevice);
+	cudaMemcpy(n1,n,sizeof(int),cudaMemcpyHostToDevice);
+	for(int i=0;i<g;i++)
+	{
+		if(i%2==0)
+		{
+			even<<<1,(g/2)>>>(devA,n1);
+		}
+		else
+		{
+			odd<<<1,(g/2)>>>(devA,n1);
+		}
+	}
+	cudaMemcpy(c,devA,sizeof(int)*g,cudaMemcpyDeviceToHost);
+	printf("After sort--------\n");
+	for(int j=0;j<g;j++)
+	{
+		printf("%d ",c[j]);
+	}
+	cudaFree(devA);
+	getch();
+	return 0;
+}
